@@ -1,0 +1,8 @@
+{
+  "www.nytimes.com": {
+    "article_text_selectors": [
+      "div.articleBody > p",
+      "p.story-body-text"
+    ]
+  }
+}
