@@ -7,6 +7,9 @@ def getRulesForDomain(domain):
   if domain in RULES:
     return RULES[domain]
 
+def domainHasRules(domain):
+  return domain in RULES
+
 def getArticleSelectorsForDomain(domain):
   if domain in RULES:
     return RULES[domain]["article_text_selectors"]

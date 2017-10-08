@@ -35,26 +35,3 @@ def extract_text_from_article_html(url, article_html):
             *[soup.select(selector) for selector in selectors]
         )])
     else: raise Exception("No article text selector(s) for domain " + domain)
-
-def get_mother_jones_urls(data_file):
-    data = pd.read_csv(data_file)
-    urls = list(itertools.chain(*data["Sources"].str.split("[,;] ?| and ").values))
-    return urls
-
-def crawl_mother_jones(data_file):
-    urls = get_mother_jones_urls(data_file)
-    for url in urls:
-        domain = urlparse(url).netloc
-        if domain == "www.nytimes.com":
-            text = extract_text_from_url(url)
-            print(url)
-            print((text[:100] + "...").encode('utf8', 'ignore'))
-            print("---------------------------------------")
-
-
-
-def main():
-    crawl_mother_jones('../data/raw/motherjones.csv')
-
-if __name__ == "__main__":
-    main()

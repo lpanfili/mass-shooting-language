@@ -7,11 +7,13 @@ from scipy.sparse import csr_matrix
 import pandas as pd
 import numpy as np
 from crawler import extract_text_from_url
+from extraction_rules import domainHasRules
 
 def flatten(df, column_to_flatten, new_name, split_on):
     s = df[column_to_flatten].str.split(split_on).apply(pd.Series,1).stack()
     s.index = s.index.droplevel(-1)
     s.name = new_name
+
     del df[column_to_flatten]
     return df.join(s)
 
@@ -65,14 +67,15 @@ def get_top_features(sample_feature_weights, feature_names, top_n, reverse=False
         top.append([feature_names[i] for i in sample.argsort()[::reverse][:-top_n - 1:-1]])
     return top
 
+
 def main():
     mother_jones = pd.read_csv("../data/raw/motherjones.csv")
     sources_with_race = mother_jones[["Race", "Sources"]].copy()
     sources_with_race["Race"] = sources_with_race["Race"].str.lower()
-    sources_with_race = flatten(sources_with_race, "Sources", "Source", "[;,] ?| and ")
-    
+    sources_with_race = flatten(sources_with_race, "Sources", "Source", "[;,] ?(?=https?://)| and (?=https?://)")
+
     races = (sources_with_race["Race"] == "white").astype(int).tolist()
-    documents = [extract_text_from_url(url) if urlparse(url).netloc == "www.nytimes.com" else "" for url in sources_with_race["Source"].tolist()]
+    documents = [extract_text_from_url(url) if domainHasRules(urlparse(url).netloc) else "" for url in sources_with_race["Source"].tolist()]
     
     tokenizer = lambda doc: [w for w in re.compile(r"(?u)\b\w\w+\b").findall(doc)]
     tf_vectorizer = CountVectorizer(max_df=0.95,
@@ -89,4 +92,6 @@ def main():
     print(get_top_features(ratios, tf_feature_names, 20, True))
 
 if __name__ == "__main__":
-    races, documents = main()
+    main()
+
+
