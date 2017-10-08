@@ -4,5 +4,10 @@
       "div.articleBody > p",
       "p.story-body-text"
     ]
+  },
+  "www.foxnews.com": {
+  	"article_text_selectors": [
+  	  ".article-text"
+  	]
   }
 }
