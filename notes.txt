@@ -1,0 +1,29 @@
+DATE RANGES
+
+Start at date of shooting and capture one week worth of tweets
+eg range 2017/10/01 - 2017/10/08
+
+*****************************************
+
+QUERY STRINGS
+
+If X = city:
+#Xstrong
+#prayforX
+name of shooter
+
+*****************************************
+
+NUMBER OF TWEETS
+
+10,000 tweets per day? (We'll have to run a separate command per day)
+
+*****************************************
+
+TO DO
+
+Remove duplicate tweets
+Fill in blanks in Mother Jones spreadsheet
+How to handle multiple shooters in script?
+What's the first date we want to consider for Twitter?
+Put the output files in a better location
