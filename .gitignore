@@ -1,4 +1,4 @@
-data/sources
+data/!raw
 __pycache__
 .vscode
 .DS_Store
