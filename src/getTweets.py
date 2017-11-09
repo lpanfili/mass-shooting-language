@@ -60,7 +60,6 @@ def get_tweets(shootingDict):
 			for query in queries:  # Go through the list of search terms
 				currentDate = shootingDict[incident]['date']
 				for i in range(0,7):  # Go through the seven day range following incident
-				#for i in range(0,2):  # to run an abbreviated version for testing purposes
 					nextDay = currentDate + datetime.timedelta(days=1)
 					filename = "../data/tweets/" + str(incident) + "-" + query + "-" + str(i) + ".csv"
 					command = "python ../GetOldTweets-python-master/Exporter.py \
