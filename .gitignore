@@ -2,3 +2,9 @@ data/
 __pycache__
 .vscode
 .DS_Store
+
+# Condor
+*.cmd
+*.error
+*.out
+*.log
