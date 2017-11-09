@@ -18,7 +18,10 @@ def make_dict(csv_path):
 		for line in reader:
 			rawDate = line[0]
 			date, incidentID = make_date_incident(rawDate)
-			hashtags = line[1].split(', ')
+			if line[1] != "":
+				hashtags = line[1].split(', ')
+			else:
+				hashtags = []
 			twitter = line[2].lower() == "true"
 			shooter = line[3]
 			race = line[4].lower()
@@ -55,16 +58,16 @@ def get_tweets(shootingDict):
 			queries = shootingDict[incident]["hashtags"]
 			queries.append(shootingDict[incident]["shooter"])
 			for query in queries:  # Go through the list of search terms
-				incidentDate = shootingDict[incident]['date']
+				currentDate = shootingDict[incident]['date']
 				for i in range(0,7):  # Go through the seven day range following incident
 				#for i in range(0,2):  # to run an abbreviated version for testing purposes
-					nextDay = incidentDate + datetime.timedelta(days=1)
-					filename = str(incident) + "-" + query + "-" + str(i) + ".csv"
-					command = "python /Users/Laura/Desktop/mass-shootings-language/GetOldTweets-python-master/Exporter.py \
+					nextDay = currentDate + datetime.timedelta(days=1)
+					filename = "../data/tweets/" + str(incident) + "-" + query + "-" + str(i) + ".csv"
+					command = "python ../GetOldTweets-python-master/Exporter.py \
 							--maxtweets 10000 --querysearch '{}' --output '{}' --since {} --until {}". \
-							format(query, filename, str(incidentDate), str(nextDay))
+							format(query, filename, str(currentDate), str(nextDay))
 					subprocess.check_output(command, shell = True)
-					incidentDate = nextDay  # Increase the day by one for the next one
+					currentDate = nextDay  # Increase the day by one for the next one
 				
 	
 def main():
