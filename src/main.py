@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 from crawler import extract_text_from_url
 from extraction_rules import domainHasRules
+from getTweets import make_date_incident 
+import lda
 
 def flatten(df, column_to_flatten, new_name, split_on):
     s = df[column_to_flatten].str.split(split_on).apply(pd.Series,1).stack()
@@ -69,27 +71,47 @@ def get_top_features(sample_feature_weights, feature_names, top_n, reverse=False
 
 
 def main():
-    mother_jones = pd.read_csv("../data/raw/motherjones.csv")
-    sources_with_race = mother_jones[["Race", "Sources"]].copy()
-    sources_with_race["Race"] = sources_with_race["Race"].str.lower()
-    sources_with_race = flatten(sources_with_race, "Sources", "Source", "[;,] ?(?=https?://)| and (?=https?://)")
+    mother_jones = pd.read_csv("../raw/motherjones.csv")
+    incident_to_race = {make_date_incident(row['Date'])[1]: row['Race'].lower()=='white' for index, row in mother_jones.iterrows()}
+    tweets = pd.read_csv("../100K_sample.csv")
+    tweets['race'] = tweets['incident_id'].apply(lambda incident: incident_to_race[incident])
 
-    races = (sources_with_race["Race"] == "white").astype(int).tolist()
-    documents = [extract_text_from_url(url) if domainHasRules(urlparse(url).netloc) else "" for url in sources_with_race["Source"].tolist()]
+    #sources_with_race = mother_jones[["Race", "Sources"]].copy()
+    #sources_with_race["Race"] = sources_with_race["Race"].str.lower()
+    #sources_with_race = flatten(sources_with_race, "Sources", "Source", "[;,] ?(?=https?://)| and (?=https?://)")
+
+    #races = (sources_with_race["Race"] == "white").astype(int).tolist()
+    #documents = [extract_text_from_url(url) if domainHasRules(urlparse(url).netloc) else "" for url in sources_with_race["Source"].tolist()]
+
+    documents = tweets['text']
+    races = tweets['race']
     
+    url_regex = re.compile(r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)")
     tokenizer = lambda doc: [w for w in re.compile(r"(?u)\b\w\w+\b").findall(doc)]
-    tf_vectorizer = CountVectorizer(max_df=0.95,
-                                    min_df=5,
+    names = set(mother_jones['Shooter'].str.lower().str.split().apply(pd.Series,1).stack().tolist())
+    places = set([word.replace(',', '') for word in mother_jones['Location'].str.lower().str.split().apply(pd.Series,1).stack().tolist()])
+    #tokenizer = nltk.tokenize.TweetTokenizer().tokenize
+    tf_vectorizer = CountVectorizer(vocabulary=set(word.lower() for word in nltk.corpus.words.words()),
+                                    max_df=0.95,
+                                    min_df=20,
                                     ngram_range=(1, 2),
                                     tokenizer=tokenizer,
-                                    stop_words=ENGLISH_STOP_WORDS)
+                                    stop_words=set(ENGLISH_STOP_WORDS).union(names).union(places))
     tf = tf_vectorizer.fit_transform(documents)
     tf_feature_names = [name.replace(' ', '_') for name in tf_vectorizer.get_feature_names()] # Underscore ngrams
 
-    ratios = calculateGlobalWeightedLogOddsRatios(to_one_hot(races), tf, 100)
-    print(get_top_features(ratios, tf_feature_names, 20))
+    model = lda.LDA(n_topics=20, n_iter=1500, random_state=1)
+    model.fit(tf)  # model.fit_transform(X) is also available
+    topic_word = model.topic_word_  # model.components_ also works
+    n_top_words = 10
+    for i, topic_dist in enumerate(topic_word):
+        topic_words = np.array(tf_feature_names)[np.argsort(topic_dist)][:-(n_top_words+1):-1]
+        print('Topic {}: {}'.format(i, ' '.join(topic_words)))
+
+    ratios = np.nan_to_num(calculateGlobalWeightedLogOddsRatios(to_one_hot(races), tf, 100))
+    print([word.encode('utf8') for word in get_top_features(ratios, tf_feature_names, 20)[0]])
     print("-------------")
-    print(get_top_features(ratios, tf_feature_names, 20, True))
+    print([word.encode('utf8') for word in get_top_features(ratios, tf_feature_names, 20, True)[0]])
 
 if __name__ == "__main__":
     main()

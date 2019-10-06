@@ -3,17 +3,21 @@ import argparse
 import pandas
 
 def parse_args():
-	parser = argparse.ArgumentParser();
+	parser = argparse.ArgumentParser()
 	parser.add_argument('tweets_dir', type=str, help='The directory containing the tweets')
-        parser.add_argument('output_dir', type=str, help='The output directory for the combined files')
+	parser.add_argument('output_dir', type=str, help='The output directory for the combined files')
 	return parser.parse_args()
 
 def combine(outputFile, filenames):
 	dfs = []
 	for file in filenames:
 		print("Reading "+file)
-		dfs.append(pandas.read_csv(file, delimiter=';', quotechar='"'))
-	pandas.concat(dfs).to_csv(outputFile)
+		dfs.append(pandas.read_csv(file, dtype={'id':str}, delimiter=';', quotechar='"'))
+	df = pandas.concat(dfs)
+	print("Before:"+str(df.shape))
+	df = df.drop_duplicates(subset=['id'])
+	print("After:"+str(df.shape))
+	df.to_csv(outputFile, index=False)
 
 def get_files_by_incident(tweetsDir):
 	for path, dirnames, filenames in os.walk(tweetsDir):
